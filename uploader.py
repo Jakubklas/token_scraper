@@ -9,6 +9,7 @@ import os
 
 from config import *
 from cookie_scrape import Cookies
+from upload_status import get_processed_status
 
 logger = logging.getLogger(__name__)
 
@@ -17,11 +18,15 @@ class FileUploader:
         self.driver = None
         self.url = CAPACITY_UPLOADER_URL
         self.base_url = BASE_URL
+        self.cookies_handler = None
+        self.cookies_string = None
 
-    def setup_driver(self, cookies_list):
+    def setup_driver(self, cookies_list, cookies_string, cookies_handler=None):
         """Initialize Chrome driver and load cookies."""
         logger.info("Setting up Chrome driver...")
         self.driver = webdriver.Chrome()
+        self.cookies_handler = cookies_handler
+        self.cookies_string = cookies_string  # Store for API requests
 
         # First navigate to base domain to set cookies
         logger.info("Navigating to base domain...")
@@ -153,6 +158,17 @@ class FileUploader:
                 )
                 logger.info(f"Upload successful: {success_msg.text}")
                 logger.info(f"File uploaded: {file_path}")
+
+                # Verify upload status using pre-generated cookie string
+                if self.cookies_string:
+                    status = get_processed_status(
+                            url=STATUS_URL,
+                            upload_type=upload_type,
+                            filename=file_path.split("\\")[-1],
+                            cookies=self.cookies_string
+                        )
+                    logger.info(f"File upload status: {status.get('status', '')}, Message: {status.get('message', '')}")
+
                 return True
 
             except Exception as e:
@@ -195,11 +211,12 @@ if __name__ == "__main__":
     cc = Cookies(CAPACITY_UPLOADER_URL)
 
     try:
-        # Get the cookies
+        # Get the cookies in both formats (only once)
         cookies_list = cc.main(as_string=False)
+        cookies_string = cc.main(as_string=True)
 
         # Setup driver and load cookies
-        if not uploader.setup_driver(cookies_list):
+        if not uploader.setup_driver(cookies_list, cookies_string, cookies_handler=cc):
             logger.error("Failed to setup driver. Exiting...")
             exit(1)
 
