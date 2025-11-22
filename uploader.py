@@ -16,6 +16,7 @@ class FileUploader:
     def __init__(self):
         self.driver = None
         self.url = CAPACITY_UPLOADER_URL
+        self.base_url = BASE_URL
 
     def setup_driver(self, cookies_list):
         """Initialize Chrome driver and load cookies."""
@@ -24,12 +25,10 @@ class FileUploader:
 
         # First navigate to base domain to set cookies
         logger.info("Navigating to base domain...")
-        self.driver.get("https://logistics.amazon.co.uk")
+        self.driver.get(self.base_url)
 
         # Load cookies
         logger.info("Loading cookies...")
-        logger.info(f"Cookies list: {[c for c in cookies_list]}")
-
         if not cookies_list:
             logger.error("No valid cookies found!")
             return False
@@ -37,10 +36,10 @@ class FileUploader:
         for cookie in cookies_list:
             # Only add cookies that match the current domain
             cookie_domain = cookie.get('domain', '')
-            current_domain = self.driver.current_url
+            current_domain = self.base_url.replace("https://", "")
 
             # Skip cookies from different domains
-            if cookie_domain and not ('amazon.co.uk' in cookie_domain or 'logistics.amazon.co.uk' in cookie_domain):
+            if cookie_domain and not (current_domain in cookie_domain):
                 logger.debug(f"Skipping cookie {cookie.get('name')} from domain {cookie_domain}")
                 continue
 
@@ -74,9 +73,6 @@ class FileUploader:
     def upload_file(self, upload_type, file_path):
         """
         Upload a single file to the capacity uploader.
-
-        Args:
-            file_path: Absolute path to the CSV file
         """
         try:
             logger.info(f"Uploading file: {file_path}")
@@ -98,7 +94,7 @@ class FileUploader:
                 f"//a[@class='a-dropdown-link' and contains(text(), '{upload_type}')]"
             )))
             option.click()
-            logger.info(f"✓ Selected: {upload_type}")
+            logger.info(f"Upload Type Selected : {upload_type}")
 
             # Check if file exists first
             if not os.path.exists(file_path):
@@ -133,8 +129,7 @@ class FileUploader:
 
             if "Choose a file" in file_name_display.text and not input_value_after:
                 logger.error("File was not selected! Input value is empty.")
-                logger.info("Browser will stay open for 30 seconds so you can inspect...")
-                time.sleep(30)
+                time.sleep(5)
                 return False
 
             # Click "Upload File" button - click the button element, not the span
@@ -156,8 +151,8 @@ class FileUploader:
                         "//*[contains(text(), 'Processor has been notified successfully.')]"
                     ))
                 )
-                logger.info(f"✓ Upload successful: {success_msg.text}")
-                logger.info(f"✓ File uploaded: {file_path}")
+                logger.info(f"Upload successful: {success_msg.text}")
+                logger.info(f"File uploaded: {file_path}")
                 return True
 
             except Exception as e:
@@ -172,9 +167,6 @@ class FileUploader:
     def upload_batch(self, files_list):
         """
         Upload multiple files sequentially.
-
-        Args:
-            files_list: List of tuples (upload_type, file_path)
         """
         results = []
         for idx, (upload_type, file_path) in enumerate(files_list, 1):
@@ -182,11 +174,11 @@ class FileUploader:
             success = self.upload_file(upload_type, file_path)
             results.append({"file": file_path, "success": success})
 
-            # Reload page between uploads to reset the form
+            # Reload page between uploads
             if idx < len(files_list):
                 logger.info("Refreshing page for next upload...")
                 self.driver.get(self.url)
-                time.sleep(3)  # Wait for page to load
+                time.sleep(3)
 
         return results
 
@@ -194,7 +186,7 @@ class FileUploader:
         """Close the browser."""
         if self.driver:
             logger.info("Closing browser...")
-            time.sleep(2)
+            time.sleep(1)
             self.driver.quit()
 
 

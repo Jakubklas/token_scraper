@@ -16,7 +16,7 @@ def main(url, cookies):
                 "utcStartDateTime": "",
                 "utcEndDateTime": "",
                 "fileType": "",
-                "uploadedBy": "rikenkup",
+                "uploadedBy": "jklas",
                 "token": "",
                 "_": int(datetime.now().timestamp() * 1000)
             }

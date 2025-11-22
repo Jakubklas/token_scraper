@@ -1,6 +1,7 @@
 import os
 from datetime import datetime
 
+BASE_URL = "https://logistics.amazon.co.uk"
 SUI_URL = "https://logistics.amazon.co.uk/internal/scheduling/dsps/api/getProviderDemandData"
 CAPACITY_UPLOADER_URL = "https://logistics.amazon.co.uk/internal/capacity/uploader"
 
