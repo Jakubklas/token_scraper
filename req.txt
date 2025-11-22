@@ -5,3 +5,4 @@ selenium
 openpyxl
 pyarrow
 pandas
+aiohttp

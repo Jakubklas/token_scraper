@@ -94,34 +94,41 @@ class Cookies:
         except Exception as e:
             logger.error(f"Error: {e}")
             return None
+        
+    def main(self, max_attempts = 1):
+        """Main orchestrator. Verifies cookies and pulls again if needed"""    
+        retries = 0
+        while retries <= max_attempts:
+            cookies_list = self.unpack(as_string=True)
+            try:
+                if cookies_list:
+                    # Check if all cookies are valid
+                    all_valid = all(self.is_valid(cookie) for cookie in cookies_list if "expiry" in cookie)
+                    if all_valid or not any("expiry" in cookie for cookie in cookies_list):
+                        logger.info(f"Valid cookies found. Total: {len(cookies_list)}")
+                        return cookies_list
+                    else:
+                        logger.info("Cookies expired, re-authenticating...")
+                        self.scrape_and_save(URL)
+                else:
+                    logger.info("No cookies found, authenticating...")
+                    self.scrape_and_save(URL)
+            except Exception as e:
+                logging.error(f"Issues loading cookies: {e}")
+                self.scrape_and_save(URL)
+                retries += 1
+        logger.error("Failed. Could not load cookies.")
+        return []
+
 
 
 
 if __name__ == "__main__":
     cc = Cookies(URL)
-    max_attempts = 1
-    retries = 0
+    cc.main()
 
-    while retries <= max_attempts:
-        # Get raw cookies for validation
-        cookies_list = cc.unpack(as_string=False)
-        try:
-            if cookies_list:
-                # Check if all cookies are valid
-                all_valid = all(cc.is_valid(cookie) for cookie in cookies_list if "expiry" in cookie)
-                if all_valid or not any("expiry" in cookie for cookie in cookies_list):
-                    logger.info(f"Valid cookies found. Total: {len(cookies_list)}")
-                    break
-                else:
-                    logger.info("Cookies expired, re-authenticating...")
-                    cc.scrape_and_save(URL)
-            else:
-                logger.info("No cookies found, authenticating...")
-                cc.scrape_and_save(URL)
-        except Exception as e:
-            logging.error(f"Issues loading cookies: {e}")
-            cc.scrape_and_save(URL)
-            retries += 1 
+
+    
 
 
     
