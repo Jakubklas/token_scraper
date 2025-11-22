@@ -11,7 +11,7 @@ from cookie_scrape import Cookies
 logger = logging.getLogger(__name__)
 
 class SiteScraper:
-    def __init__(self, url=URL, site_map=SITE_MAP, num_days=7):
+    def __init__(self, url=SUI_URL, site_map=SITE_MAP, num_days=7):
         self.url = url
         self.site_map = site_map
         self.counter = 0
@@ -90,8 +90,8 @@ class SiteScraper:
 
 
 async def main():
-    scraper = SiteScraper(URL, num_days=7)
-    cc = Cookies(URL)
+    scraper = SiteScraper(SUI_URL, num_days=7)
+    cc = Cookies(SUI_URL)
 
     cookies = cc.main()
     sites = scraper.get_sites()

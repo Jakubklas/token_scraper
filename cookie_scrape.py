@@ -19,7 +19,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 class Cookies:
-    def __init__(self, url=URL):
+    def __init__(self, url=SUI_URL):
         self.url = url
 
     def scrape_and_save(self, url):
@@ -95,36 +95,41 @@ class Cookies:
             logger.error(f"Error: {e}")
             return None
         
-    def main(self, max_attempts = 1):
-        """Main orchestrator. Verifies cookies and pulls again if needed"""    
+    def main(self, as_string=True, max_attempts=1):
+        """Main orchestrator. Verifies cookies and pulls again if needed"""
         retries = 0
         while retries <= max_attempts:
-            cookies_list = self.unpack(as_string=True)
+            # Always get cookies as list first for validation
+            cookies_list = self.unpack(as_string=False)
             try:
                 if cookies_list:
                     # Check if all cookies are valid
                     all_valid = all(self.is_valid(cookie) for cookie in cookies_list if "expiry" in cookie)
                     if all_valid or not any("expiry" in cookie for cookie in cookies_list):
                         logger.info(f"Valid cookies found. Total: {len(cookies_list)}")
-                        return cookies_list
+                        # Return in requested format
+                        if as_string:
+                            return "; ".join([f"{cookie['name']}={cookie['value']}" for cookie in cookies_list])
+                        else:
+                            return cookies_list
                     else:
                         logger.info("Cookies expired, re-authenticating...")
-                        self.scrape_and_save(URL)
+                        self.scrape_and_save(SUI_URL)
                 else:
                     logger.info("No cookies found, authenticating...")
-                    self.scrape_and_save(URL)
+                    self.scrape_and_save(SUI_URL)
             except Exception as e:
                 logging.error(f"Issues loading cookies: {e}")
-                self.scrape_and_save(URL)
+                self.scrape_and_save(SUI_URL)
                 retries += 1
         logger.error("Failed. Could not load cookies.")
-        return []
+        return [] if not as_string else ""
 
 
 
 
 if __name__ == "__main__":
-    cc = Cookies(URL)
+    cc = Cookies(SUI_URL)
     cc.main()
 
 
